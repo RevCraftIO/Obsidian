@@ -342,3 +342,246 @@ public class User
     }
 }
 ```
+
+
+```CSharp
+/* DomainExceptions.cs */
+using System;
+
+namespace YourApp.Domain.Exceptions
+{
+    public abstract class DomainException : Exception
+    {
+        protected DomainException(string message) : base(message) { }
+    }
+
+    public class UserValidationException : DomainException
+    {
+        public UserValidationException(string message) : base(message) { }
+    }
+
+    public class AccountLockoutException : DomainException
+    {
+        public AccountLockoutException(string message) : base(message) { }
+    }
+}
+
+/* ValidationAttributes.cs */
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
+
+namespace YourApp.Domain.Validation
+{
+    public class AlphanumericAttribute : ValidationAttribute
+    {
+        private static readonly Regex Pattern = new("^[a-zA-Z0-9]+$");
+        public override bool IsValid(object? value)
+        {
+            if (value is string s && Pattern.IsMatch(s)) return true;
+            return false;
+        }
+    }
+
+    public class KanaOnlyAttribute : ValidationAttribute
+    {
+        private static readonly Regex Pattern = new("^[\u3040-\u309F\u30A0-\u30FFー]+$");
+        public override bool IsValid(object? value)
+        {
+            if (value is string s && Pattern.IsMatch(s)) return true;
+            return false;
+        }
+    }
+
+    public class RomanOnlyAttribute : ValidationAttribute
+    {
+        private static readonly Regex Pattern = new("^[A-Za-z]+$");
+        public override bool IsValid(object? value)
+        {
+            if (value is string s && Pattern.IsMatch(s)) return true;
+            return false;
+        }
+    }
+}
+
+/* User.cs */
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using BCrypt.Net;
+using YourApp.Domain.Exceptions;
+using YourApp.Domain.Validation;
+
+namespace YourApp.Domain.Models
+{
+    public class User
+    {
+        private readonly AuthSettings authSettings;
+
+        [Required]
+        public Guid Id { get; private set; }
+
+        [Required(ErrorMessage = "ログインIDは必須入力項目です。")]
+        [StringLength(32, MinimumLength = 4, ErrorMessage = "ログインIDは4～32文字で指定してください。")]
+        [Alphanumeric(ErrorMessage = "ログインIDは英数字のみ使用できます。")]
+        public string LoginId { get; private set; } = string.Empty;
+
+        [Required(ErrorMessage = "ユーザー名は必須入力項目です。")]
+        [StringLength(32, MinimumLength = 1, ErrorMessage = "ユーザー名は1～32文字で指定してください。")]
+        public string Username { get; private set; } = string.Empty;
+
+        [StringLength(64, MinimumLength = 1, ErrorMessage = "ユーザー名（かな）は1～64文字で指定してください。")]
+        [KanaOnly(ErrorMessage = "ユーザー名（かな）はかな文字のみ使用できます。")]
+        public string UsernameKana { get; private set; } = string.Empty;
+
+        [StringLength(64, MinimumLength = 1, ErrorMessage = "ユーザー名（ローマ字）は1～64文字で指定してください。")]
+        [RomanOnly(ErrorMessage = "ユーザー名（ローマ字）はローマ字のみ使用できます。")]
+        public string UsernameRoman { get; private set; } = string.Empty;
+
+        [Required(ErrorMessage = "ロールは必須入力項目です。")]
+        public Role Role { get; private set; } = Role.General;
+
+        [Required(ErrorMessage = "パスワードハッシュは必須入力項目です。")]
+        public string PasswordHash { get; private set; } = string.Empty;
+
+        public string? RefreshToken { get; private set; }
+        public DateTime? RefreshTokenExpiryTime { get; private set; }
+        public bool IsLocked => LockoutEnd.HasValue && LockoutEnd.Value > DateTimeOffset.UtcNow;
+        public bool IsBanned { get; private set; }
+        public int FailedLoginAttempts { get; private set; }
+        public DateTime? LockoutEnd { get; private set; }
+        public int LockoutCount { get; private set; }
+
+        public User(
+            string loginId,
+            string username,
+            string password,
+            Role role,
+            AuthSettings authSettings)
+        {
+            this.authSettings = authSettings ?? throw new ArgumentNullException(nameof(authSettings));
+
+            if (string.IsNullOrWhiteSpace(loginId))
+                throw new ArgumentException("ログインIDが無効な値です。", nameof(loginId));
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("ユーザー名が無効な値です。", nameof(username));
+            if (string.IsNullOrWhiteSpace(password))
+                throw new ArgumentException("パスワードが空です。", nameof(password));
+
+            Id = Guid.NewGuid();
+            LoginId = loginId;
+            Username = username;
+            PasswordHash = BCrypt.HashPassword(password);
+            Role = role;
+
+            ValidateUser(this);
+        }
+
+        public void SetUsername(string newUsername)
+        {
+            Username = newUsername;
+            ValidateUser(this);
+        }
+
+        public void SetUsernameKana(string newUsernameKana)
+        {
+            UsernameKana = newUsernameKana;
+            ValidateUser(this);
+        }
+
+        public void SetUsernameRoman(string newUsernameRoman)
+        {
+            UsernameRoman = newUsernameRoman;
+            ValidateUser(this);
+        }
+
+        public void SetRole(Role newRole, bool hasPermission = false)
+        {
+            if (!hasPermission)
+                throw new InvalidOperationException("ロールの変更権限がありません。");
+
+            Role = newRole;
+            ValidateUser(this);
+        }
+
+        public void SetPassword(string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(newPassword))
+                throw new ArgumentException("パスワードは必須入力項目です。", nameof(newPassword));
+
+            PasswordHash = BCrypt.HashPassword(newPassword);
+            ValidateUser(this);
+
+            ResetLockoutStatus();
+            ClearRefreshToken();
+        }
+
+        public void SetRefreshToken(string token, DateTime expiryTime)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                throw new ArgumentException("トークンは必須入力項目です。", nameof(token));
+            if (expiryTime <= DateTime.UtcNow)
+                throw new ArgumentOutOfRangeException(nameof(expiryTime), "有効期限は現在の日時よりも未来である必要があります。");
+
+            RefreshToken = token;
+            RefreshTokenExpiryTime = expiryTime.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(expiryTime, DateTimeKind.Utc)
+                : expiryTime.ToUniversalTime();
+        }
+
+        public void ClearRefreshToken()
+        {
+            RefreshToken = null;
+            RefreshTokenExpiryTime = null;
+        }
+
+        private void ValidateUser(User user)
+        {
+            var context = new ValidationContext(user);
+            var results = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(user, context, results, true);
+
+            if (!isValid)
+            {
+                foreach (var result in results)
+                {
+                    throw new UserValidationException(result.ErrorMessage!);
+                }
+            }
+        }
+
+        public bool RecordLoginFailure()
+        {
+            if (IsBanned || IsLocked)
+                return false;
+
+            FailedLoginAttempts++;
+            bool locked = false;
+
+            if (FailedLoginAttempts >= authSettings.MaxFailedAccessAttempts)
+            {
+                LockoutEnd = DateTime.UtcNow.AddMinutes(authSettings.LockoutMinutes);
+                LockoutCount++;
+                FailedLoginAttempts = 0;
+                locked = true;
+            }
+
+            if (LockoutCount >= authSettings.MaxLockoutCount)
+            {
+                IsBanned = true;
+            }
+
+            return locked;
+        }
+
+        public void ResetLockoutStatus()
+        {
+            FailedLoginAttempts = 0;
+            LockoutEnd = null;
+            LockoutCount = 0;
+            IsBanned = false;
+        }
+    }
+}
+
+```
