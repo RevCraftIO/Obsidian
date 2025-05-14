@@ -127,20 +127,22 @@
 
 ### User
 ```CSharp
-// User.cs
-using System;
+using AuthGate.Shared.Exceptions;
+using AuthGate.Shared.Models.Enums;
 
-public class User
+namespace AuthGate.Shared.Models.Entities;
+
+public class UserAccount
 {
     /// <summary>
     /// ユーザーの一意なID
     /// </summary>
-    public Guid Id { get; private set; }
+    public Guid Id { get; set; }
 
     /// <summary>
     /// ログインID
     /// </summary>
-    public string LoginId { get; private set; } = string.Empty;
+    public string LoginId { get; set; } = string.Empty;
 
     /// <summary>
     /// ユーザー名
@@ -161,186 +163,156 @@ public class User
     /// パスワードハッシュ
     /// </summary>
     public string PasswordHash { get; private set; } = string.Empty;
-	
+
+    /// <summary>
+    /// ロール
+    /// </summary>
+    public Role Role { get; set; } = Role.General;
+
     /// <summary>
     /// リフレッシュトークン
     /// </summary>
-    public Guid? RefreshToken { get; private set; }
+    public string? RefreshToken { get; set; }
 
     /// <summary>
     /// リフレッシュトークンの有効期限 (UTC)
     /// </summary>
-    public DateTime? RefreshTokenExpiryTime { get; private set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
 
     /// <summary>
     /// 現在の連続ログイン失敗回数。
     /// ログイン成功またはロックアウト時にリセットされる。
     /// </summary>
-    public int FailedLoginAttempts { get; private set; }
+    public int FailedLoginAttempts { get; set; }
 
     /// <summary>
     /// アカウントロックアウトの解除日時 (UTC)。
     /// nullの場合、または過去の日時であればロックアウトされていない。
     /// </summary>
-    public DateTimeOffset? LockoutEnd { get; private set; }
+    public DateTime? LockoutEnd { get; set; }
 
     /// <summary>
     /// これまでにアカウントがロックアウトされた総回数。
     /// </summary>
-    public int LockoutCount { get; private set; }
+    public int LockoutCount { get; set; }
 
     /// <summary>
-    /// ユーザーアカウントがアクティブかどうか。
-    /// （例: 論理削除、管理者による一時停止など）
+    /// アカウントロックアウトフラグ
     /// </summary>
-    public bool IsActive { get; set; }
-
+    public bool IsLocked => LockoutEnd.HasValue && LockoutEnd > DateTime.UtcNow;
 
     /// <summary>
-    /// アカウントが現在一時的にロックアウトされているかどうかを確認します。
+    /// アカウントバンフラグ
     /// </summary>
-    public bool IsTemporarilyLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTimeOffset.UtcNow;
+    public bool IsBanned { get; set; }
 
     /// <summary>
-    /// コンストラクタ。
+    /// パスワードを設定
     /// </summary>
-    /// <param name="loginId">ログインID。</param>
-    /// <param name="username">ユーザー名。</param>
-    /// <param name="hashedPassword">ハッシュ化されたパスワード。</param>
-    /// <param name="passwordSalt">パスワードソルト。</param>
-    public User(string loginId, string username, string hashedPassword, string passwordSalt)
+    /// <param name="password">パスワード</param>
+    public void SetPassword(string password)
     {
-        if (string.IsNullOrWhiteSpace(loginId))
-            throw new ArgumentException("LoginId cannot be empty.", nameof(loginId));
-        if (string.IsNullOrWhiteSpace(username))
-            throw new ArgumentException("Username cannot be empty.", nameof(username));
-        if (string.IsNullOrWhiteSpace(hashedPassword))
-            throw new ArgumentException("HashedPassword cannot be empty.", nameof(hashedPassword));
-        if (string.IsNullOrWhiteSpace(passwordSalt))
-            throw new ArgumentException("PasswordSalt cannot be empty.", nameof(passwordSalt));
-
-        Id = Guid.NewGuid();
-        LoginId = loginId;
-        Username = username;
-        HashedPassword = hashedPassword;
-        PasswordSalt = passwordSalt;
-
-        FailedLoginAttempts = 0;
-        LockoutCount = 0;
-        IsActive = true; // デフォルトはアクティブ
+        // パスワードをハッシュ化して保存
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
     }
 
     /// <summary>
-    /// パスワードを設定または更新します。
+    /// ログイン成功時の処理
     /// </summary>
-    /// <param name="newHashedPassword">新しいハッシュ化されたパスワード。</param>
-    /// <param name="newPasswordSalt">新しいパスワードソルト。</param>
-    public void SetPassword(string newHashedPassword, string newPasswordSalt)
+    public void RecordLoginSuccess(DateTime refreshTokenExpiryTime)
     {
-        if (string.IsNullOrWhiteSpace(newHashedPassword))
-            throw new ArgumentException("NewHashedPassword cannot be empty.", nameof(newHashedPassword));
-        if (string.IsNullOrWhiteSpace(newPasswordSalt))
-            throw new ArgumentException("NewPasswordSalt cannot be empty.", nameof(newPasswordSalt));
-
-        HashedPassword = newHashedPassword;
-        PasswordSalt = newPasswordSalt;
-        // パスワード変更時は、セキュリティのため関連する状態をリセットすることが推奨されます。
-        ResetLockoutStatus(); // 失敗回数やロックアウト状態をクリア
-        ClearRefreshToken();  // 既存のセッションも無効化することが望ましい場合がある
+        // ログイン成功時にリセット
+        ResetLockoutStatud();
+        SetRefreshToken(refreshTokenExpiryTime);
     }
 
     /// <summary>
-    /// リフレッシュトークンとその有効期限を設定します。
+    /// リフレッシュトークンを設定
     /// </summary>
-    /// <param name="token">リフレッシュトークン。</param>
-    /// <param name="expiryTime">有効期限 (UTC)。</param>
-    public void SetRefreshToken(string token, DateTime expiryTime)
+    /// <param name="refreshTokenExpiryTime">リフレッシュトークン有効期限</param>
+    public void SetRefreshToken(DateTime refreshTokenExpiryTime)
     {
-        if (string.IsNullOrWhiteSpace(token))
-            throw new ArgumentException("Token cannot be empty.", nameof(token));
-        if (expiryTime <= DateTime.UtcNow)
-            throw new ArgumentOutOfRangeException(nameof(expiryTime), "Expiry time must be in the future.");
-
-        RefreshToken = token;
-        RefreshTokenExpiryTime = expiryTime.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(expiryTime, DateTimeKind.Utc) // 未指定ならUTCとして扱う
-            : expiryTime.ToUniversalTime();
+        // リフレッシュトークンを新規作成
+        RefreshTokenExpiryTime = refreshTokenExpiryTime;
+        RefreshToken = Guid.NewGuid().ToString();
     }
 
     /// <summary>
-    /// リフレッシュトークンをクリアします。
+    /// リフレッシュトークンを変更
     /// </summary>
-    public void ClearRefreshToken()
+    public void ChangeRefreshToken()
+    {
+        // リフレッシュトークンを変更
+        RefreshToken = Guid.NewGuid().ToString();
+    }
+
+    /// <summary>
+    /// リフレッシュトークンをリセット
+    /// </summary>
+    public void ResetRefreshToken()
     {
         RefreshToken = null;
         RefreshTokenExpiryTime = null;
     }
 
     /// <summary>
-    /// ログイン成功を記録します。
-    /// 連続失敗回数をリセットします。
+    /// ログイン失敗時の処理
     /// </summary>
-    public void RecordLoginSuccess()
+    /// <param name="maxFailedAccessAttempts">最大ログイン失敗回数</param>
+    /// <param name="lockoutMinutes">ロックアウト時間</param>
+    /// <param name="maxLockoutCount">最大ロックアウト回数</param>
+    /// <exception cref="BannedException">バンされているときに発生する例外</exception>
+    /// <exception cref="LockoutException">ロックアウトされているときに発生する例外</exception>
+    public void RecordLoginFailure(int maxFailedAccessAttempts, int lockoutMinutes, int maxLockoutCount)
     {
-        FailedLoginAttempts = 0;
-        // 既存のロックアウトが自然解除されるのを待つか、
-        // ログイン成功で一時ロックアウトを解除するかはポリシーによります。
-        // ここでは失敗回数のみリセットします。
-        // LockoutEnd = null; // もし即時解除する場合
-    }
-
-    /// <summary>
-    /// ログイン失敗を記録し、必要に応じてアカウントをロックアウトします。
-    /// </summary>
-    /// <param name="settings">認証設定。</param>
-    public void RecordLoginFailure(AuthSettings settings)
-    {
-        if (settings == null) throw new ArgumentNullException(nameof(settings));
-
-        // 永久ロックされているか、または既に一時ロックアウト中の場合は、カウンタを更新しない
-        if (IsPermanentlyLocked(settings) || IsTemporarilyLockedOut)
-        {
-            return;
-        }
+        if (IsBanned) { throw new BannedException(); }
+        if (IsLocked) { throw new LockoutException((DateTime)LockoutEnd!); }
 
         FailedLoginAttempts++;
 
-        if (FailedLoginAttempts >= settings.MaxFailedAccessAttemptsBeforeLockout)
+        bool isLockedNow = false;
+        if (FailedLoginAttempts >= maxFailedAccessAttempts)
         {
-            LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(settings.DefaultLockoutMinutes);
+            LockoutEnd = DateTime.UtcNow.AddMinutes(lockoutMinutes);
             LockoutCount++;
-            FailedLoginAttempts = 0; // ロックアウト後は失敗カウントをリセット
+            FailedLoginAttempts = 0;
+            isLockedNow = true;
         }
-    }
 
-    /// <summary>
-    /// アカウントが永久にロックアウトされているかどうかを確認します。
-    /// </summary>
-    /// <param name="settings">認証設定。</param>
-    /// <returns>永久ロックされていれば true、そうでなければ false。</returns>
-    public bool IsPermanentlyLocked(AuthSettings settings)
-    {
-        if (settings == null) throw new ArgumentNullException(nameof(settings));
-        // MaxLockoutCountForPermanentLockout が0以下なら永久ロック機能は無効と解釈
-        if (settings.MaxLockoutCountForPermanentLockout <= 0)
+        // BANの条件をチェック (ロックアウトのチェック後)
+        if (LockoutCount >= maxLockoutCount)
         {
-            return false;
+            IsBanned = true;
+            throw new BannedException();
         }
-        return LockoutCount >= settings.MaxLockoutCountForPermanentLockout;
+
+        // BANチェック後にロックアウト状態をチェックして例外をスロー
+        if (isLockedNow)
+        {
+            throw new LockoutException((DateTime)LockoutEnd!);
+        }
     }
 
     /// <summary>
-    /// アカウントのロックアウト状態（失敗回数、ロックアウト終了日時、ロックアウト回数）をリセットします。
-    /// 主にパスワードリセット成功時や管理者によるロック解除時に使用します。
+    /// アカウントロック解除
     /// </summary>
-    public void ResetLockoutStatus()
+    public void ResetLockoutStatud()
     {
         FailedLoginAttempts = 0;
         LockoutEnd = null;
-        // LockoutCountをリセットするかどうかはポリシーによります。
-        // 永久ロックのカウントもリセットする場合は LockoutCount = 0;
+        LockoutCount = 0;
+    }
+
+    /// <summary>
+    /// アカウントバン解除
+    /// </summary>
+    public void ResetBanStatus()
+    {
+        IsBanned = false;
+        ResetLockoutStatud();
     }
 }
+
 ```
 
 
