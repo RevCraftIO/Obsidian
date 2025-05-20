@@ -7,17 +7,17 @@
 #### 認証関連DTO
 | ファイル名 | 用途 | 主要プロパティ |
 |-----------|------|---------------|
-| `RegisterRequestDto` | 新規ユーザー登録 | UserName, Password, LastName, FirstName |
 | `LoginRequestDto` | ログイン認証 | UserName, Password, RememberMe |
 | `AuthResponseDto` | 認証結果返却 | Token, Expires, UserInfo |
 
 #### ユーザー操作DTO
 | ファイル名 | 用途 | 主要プロパティ |
 |-----------|------|---------------|
+| `RegisterRequestDto` | 新規ユーザー登録 | UserName, Password, LastName, FirstName |
 | `UpdateLoginIdRequestDto` | ログインID変更 | CurrentUserName, NewUserName |
 | `UpdatePasswordRequestDto` | パスワード変更 | CurrentPassword, NewPassword |
-| `UpdateProfileRequestDto` | 表示名変更 | LastName, FirstName |
-| `UserResponseDto` | ユーザーの返却 | ... |
+| `UpdateDisplayNameRequestDto` | 表示名変更 | LastName, FirstName |
+
 
 ---
 
@@ -26,7 +26,6 @@
 #### 認証コントローラー (`AuthController`)
 |メソッド|パス|認証要否|機能|
 |---|---|---|---|
-|POST|`/api/auth/register`|❌|新規ユーザー登録|
 |POST|`/api/auth/login`|❌|ログイン（認証用 Cookie を発行）|
 |POST|`/api/auth/logout`|✔️|ログアウト（認証 Cookie のクリア）|
 |GET|`/api/auth/me`|✔️|自身の認証情報確認（ユーザー名返却など）|
@@ -34,27 +33,26 @@
 #### ユーザーコントローラー (`UserController`)
 |メソッド|パス|認証要否|機能|
 |---|---|---|---|
-|GET|`/api/users`|✔️|全ユーザー一覧の取得|
-|GET|`/api/users/{userId}`|✔️|指定ユーザー（ID）情報の取得|
-|GET|`/api/users?username={name}`|✔️|指定ユーザー（ログインID）情報の取得|
-|GET|`/api/users?displayName={name}`|✔️|指定ユーザー（表示名）情報の取得|
-|PATCH|`/api/users/{userId}`|✔️|指定ユーザー情報の部分更新（ログインID／表示名／パスワードなどをリクエストボディで指定）|
-|PATCH|`/api/users/me`|✔️|自身のユーザー情報の部分更新|
-|DELETE|`/api/users/{userId}`|✔️|指定ユーザーの削除|
+|POST|`/api/user/register`|✔️|新規ユーザー登録|
+|GET|`/api/user`|✔️|全ユーザー一覧の取得|
+|GET|`/api/user/{userId}`|✔️|指定ユーザー（ID）情報の取得|
+|GET|`/api/user?username={name}`|✔️|指定ユーザー（ログインID）情報の取得|
+|GET|`/api/user?displayName={name}`|✔️|指定ユーザー（表示名）情報の取得|
+|PATCH|`/api/user/{userId}`|✔️|指定ユーザー情報の部分更新（ログインID／表示名／パスワードなどをリクエストボディで指定）|
+|PATCH|`/api/user/me`|✔️|自身のユーザー情報の部分更新|
+|DELETE|`/api/user/{userId}`|✔️|指定ユーザーの削除|
 
 ---
 
 ### 認証フロー設計
 
 1. **ログイン処理**
-   - ユーザー認証状態の有効期間は30分間
+   - ユーザー認証状態の有効期間は480分間
    - 連続5回失敗でアカウントロックアウト（10分間）
-   - 認証成功時に最終ログイン日時を更新
+   - 5回ロックアウトで永久ロックアウト
 
-2. **パスワードポリシー**
-   - 最小長8文字
-   - 大文字/小文字/数字の組み合わせ必須
-   - ユーザー名を含むパスワードを禁止
+1. **パスワードポリシー**(開発段階)
+   - 最小長4文字
 
 3. **セッション管理**
    - クッキーにHttpOnlyとSecureフラグを設定
@@ -123,26 +121,15 @@
 
 ---
 
-### テスト戦略
-
-| テスト種別 | 実施内容 | 検証ツール |
-|-----------|----------|------------|
-| 単体テスト | ビジネスロジック検証 | xUnit |
-| 統合テスト | APIエンドポイント検証 | Postman |
-| 負荷テスト | 同時認証処理検証 | k6 |
-| セキュリティテスト | OWASPチェックリスト | ZAP |
-
----
 
 ### 移行戦略
 
 1. **バージョン管理**
    - JSONスキーマ変更時にバージョニング
-   - 自動マイグレーションスクリプトを用意
 
 2. **フェイルセーフ**
    - 更新前にバックアップ自動作成
-   - 整合性チェック失敗時にロールバック
+   - ユーザーが任意にロールバック
 
 3. **監視項目**
    - ファイルサイズ増加率

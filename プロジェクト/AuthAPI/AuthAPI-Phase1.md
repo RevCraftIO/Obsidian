@@ -7,7 +7,7 @@
 
 ### ASP.NET Core Web APIプロジェクトの作成
 - プロジェクトテンプレートの一覧から「ASP.NET Core Web API」を選択し、「次へ」をクリックします。
-- プロジェクト名として `AuthAPI` などの任意の名前で作成します。
+- プロジェクト名として `AuthApi` などの任意の名前で作成します。
 - ターゲットフレームワークは最新の推奨されるもの(.NET 9)を選択します。
 - 認証の種類は「認証なし」を選択します。
 
@@ -15,13 +15,13 @@
 
 ### クラスライブラリの作成
 - このクラスライブラリはDTOなど、クライアントと共通で使用するクラスを定義します。
-- プロジェクト名として `AuthAPI.Shared` などの任意の名前で作成します。
+- プロジェクト名として `AuthApi.Shared` などの任意の名前で作成します。
 
 ---
 
 ### データクラスの実装
 #### AppUserクラスの実装
-- `AuthAPI` > `Models` > `Entities` >   `AppUser.cs`
+- `AuthApi` > `Models` > `Entities` >   `AppUser.cs`
 - `AppUser` クラスは `IdentityUser<Guid>` を継承します。
 
 | プロパティ名 | データ型 | 説明 |
@@ -30,7 +30,7 @@
 | FirstName | string | 名 |
 
 #### UserInfoクラスの実装
-- `AuthAPI.Shared` > `Models` > `Entities` > `UserInfo.cs`
+- `AuthApi.Shared` > `Models` > `Entities` > `UserInfo.cs`
 - この `UserInfo` クラスはJSONファイルにユーザー情報を永続化するために使用されます。
 - 各プロパティには `Description` 属性と `Display` 属性を付与します。
 
@@ -51,7 +51,7 @@
 ---
 
 ### AppSettingsクラスの実装
-- AuthAPI` > `Models` > `Settings` > `AppSettings.cs`
+- AuthApi` > `Models` > `Settings` > `AppSettings.cs`
 - `appsettings.json` に保存した情報を取得するために `AppSettings` クラスを作成します。
 - アプリケーション起動時に、`appsettings.json`の内容を`AppSettings`クラスにマッピングします。
 - 利用時はコンストラクタで `IOptions<AppSettings>` を受け取ることで設定を使用できます。
@@ -65,11 +65,11 @@
 ---
 
 ### UserStoreの実装
-- `AuthAPI` > `Stores` > `UserStore.cs`
+- `AuthApi` > `Stores` > `UserStore.cs`
 - `UserStore` クラスに、`IUserStore<AppUser>` と `IUserPasswordStore<AppUser>` インターフェースを実装します。
 - `UserStore` クラスには `IOptions<AppSettings>` と `ILogger<UserStore>` の依存性注入をします。
 - JSONファイルの存在を確認し、存在しない場合は空のJSON配列で初期化するメソッドを作成します。
-- `SemaphoreSlim` を使用して排他制御を行います。
+- `lock` を使用して排他制御を行います。
 - `UserStore` クラスに、JSONファイルからユーザーデータを読み込み、`List<UserData>` として保持するメソッドを作成します。
 
 #### UserServiceクラスのプライベートメソッド一覧
