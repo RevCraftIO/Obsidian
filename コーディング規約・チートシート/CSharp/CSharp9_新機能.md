@@ -4,9 +4,9 @@ tags:
   - CSharp
 子文書:
 ---
-# C# 9.0 新機能まとめ
+# CSharp 9.0 新機能まとめ
 
-C# 9.0では特にレコード型とパターンマッチングに焦点を当てた多くの新機能が追加され、関数型プログラミングのサポートが強化されました。
+CSharp 9.0では特にレコード型とパターンマッチングに焦点を当てた多くの新機能が追加され、関数型プログラミングのサポートが強化されました。
 
 ## 1. Records
 
@@ -111,7 +111,7 @@ Console.WriteLine(person.Age);
 // person.FirstName = "花子"; // コンパイルエラー
 ```
 
-### required修飾子との組み合わせ（C# 11で導入されましたが、概念はC# 9から）
+### required修飾子との組み合わせ（CSharp 11で導入されましたが、概念はCSharp 9から）
 
 ```csharp
 public class Product
@@ -153,7 +153,7 @@ namespace MyApp
     }
 }
 
-// C# 9の新しい方法（Program.cs）
+// CSharp 9の新しい方法（Program.cs）
 using System;
 
 Console.WriteLine("Hello World!");
@@ -242,7 +242,7 @@ string ProcessValue(object value) => value switch
 Dictionary<string, List<int>> data = new Dictionary<string, List<int>>();
 List<string> names = new List<string>();
 
-// C# 9の新しい方法
+// CSharp 9の新しい方法
 Dictionary<string, List<int>> data = new();
 List<string> names = new();
 
@@ -308,7 +308,7 @@ Dog clonedDog = originalDog.Clone(); // 型キャストが不要
 Person person = GetPerson();
 string name = person != null ? person.Name : (string)null;
 
-// C# 9では型推論が改善
+// CSharp 9では型推論が改善
 Person person = GetPerson();
 string name = person?.Name ?? null;
 
@@ -500,7 +500,7 @@ unsafe class FunctionPointerExample
 
 ## まとめ
 
-C# 9.0では以下の主要な改善がありました：
+CSharp 9.0では以下の主要な改善がありました：
 
 - **Records**: 不変データ構造の簡単な定義
 - **Init-only Properties**: 初期化時のみ設定可能なプロパティ
@@ -509,4 +509,4 @@ C# 9.0では以下の主要な改善がありました：
 - **Target-typed new**: 型推論によるnew式の簡素化
 - **Covariant Return Types**: オーバーライド時の柔軟な戻り値型
 
-これらの機能により、C#のコードはより関数型プログラミングに親和性が高く、簡潔で表現力豊かになりました。特にRecordsとパターンマッチングの強化は、データ中心のアプリケーション開発において大きな恩恵をもたらします。
+これらの機能により、CSharpのコードはより関数型プログラミングに親和性が高く、簡潔で表現力豊かになりました。特にRecordsとパターンマッチングの強化は、データ中心のアプリケーション開発において大きな恩恵をもたらします。

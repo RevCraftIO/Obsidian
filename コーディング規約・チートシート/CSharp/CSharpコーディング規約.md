@@ -232,7 +232,7 @@ public async Task<Customer> GetCustomerByIdAsync(int id)
 
 ### null 処理
 
-- C# 8.0以降では null 許容参照型を使用します。
+- CSharp 8.0以降では null 許容参照型を使用します。
 - null チェックには null 条件演算子 (`?.`) と null 合体演算子 (`??`) を活用します。
 - パラメータのnullチェックは `ArgumentNullException` を使用します。
 
@@ -254,7 +254,7 @@ public void ProcessCustomer(Customer customer)
 ### ディスポーザブルオブジェクト
 
 - `IDisposable` を実装するオブジェクトは `using` ステートメントで囲みます。
-- C# 8.0以降では `using` 宣言を使用できます。
+- CSharp 8.0以降では `using` 宣言を使用できます。
 
 ```csharp
 // 従来の using ステートメント
@@ -263,7 +263,7 @@ using (var file = File.OpenRead(path))
     // ファイル操作
 }
 
-// C# 8.0 以降の using 宣言
+// CSharp 8.0 以降の using 宣言
 using var file = File.OpenRead(path);
 // ファイル操作
 // スコープ終了時に自動的に Dispose される
@@ -478,7 +478,7 @@ end_of_line = crlf
 insert_final_newline = true
 charset = utf-8-bom
 
-# C# 固有の設定
+# CSharp 固有の設定
 csharp_new_line_before_open_brace = all
 csharp_prefer_braces = true:warning
 dotnet_sort_system_directives_first = true
@@ -486,6 +486,6 @@ dotnet_sort_system_directives_first = true
 
 ### 継続的な学習
 
-- 新しいC#バージョンとベストプラクティスを継続的に学びます。
+- 新しいCSharpバージョンとベストプラクティスを継続的に学びます。
 - コードレビューを通じて知識を共有します。
 - 定期的にコーディング規約を見直し、必要に応じて更新します。

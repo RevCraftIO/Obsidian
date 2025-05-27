@@ -4,9 +4,9 @@ tags:
   - CSharp
 子文書:
 ---
-# C# 10.0 新機能まとめ
+# CSharp 10.0 新機能まとめ
 
-C# 10.0では生産性の向上とコードの簡素化に焦点を当てた多くの新機能が追加されました。
+CSharp 10.0では生産性の向上とコードの簡素化に焦点を当てた多くの新機能が追加されました。
 
 ## 1. Record Structs
 
@@ -109,7 +109,7 @@ namespace MyApp.Services
     }
 }
 
-// C# 10の新しい方法
+// CSharp 10の新しい方法
 namespace MyApp.Services;
 
 public class UserService

@@ -4,9 +4,9 @@ tags:
   - CSharp
 子文書:
 ---
-# C# 8.0 新機能まとめ
+# CSharp 8.0 新機能まとめ
 
-C# 8.0では多くの新機能が追加され、コードの簡潔性、安全性、パフォーマンスが向上しました。
+CSharp 8.0では多くの新機能が追加され、コードの簡潔性、安全性、パフォーマンスが向上しました。
 
 ## 1. Nullable Reference Types
 
@@ -145,7 +145,7 @@ public void ReadFile()
     }
 }
 
-// C# 8の新しい方法
+// CSharp 8の新しい方法
 public void ReadFileNew()
 {
     using var file = new FileStream("file.txt", FileMode.Open);
@@ -331,7 +331,7 @@ if (name == null)
     name = "デフォルト名";
 }
 
-// C# 8の新しい方法
+// CSharp 8の新しい方法
 name ??= "デフォルト名";
 
 // より複雑な例
@@ -397,7 +397,7 @@ stackallocをより柔軟に使用できるようになりました。
 // 従来は変数宣言でのみ使用可能だった
 // Span<int> numbers = stackalloc int[3] { 1, 2, 3 };
 
-// C# 8では式の中でも使用可能
+// CSharp 8では式の中でも使用可能
 public int CalculateSum()
 {
     return AddAll(stackalloc int[3] { 1, 2, 3 });
@@ -424,7 +424,7 @@ public Span<int> GetNumbers(bool useSmallArray)
 
 ## まとめ
 
-C# 8.0では以下の主要な改善がありました：
+CSharp 8.0では以下の主要な改善がありました：
 
 - **Nullable Reference Types**: null安全性の向上
 - **Switch Expressions**: より簡潔な条件分岐
@@ -433,4 +433,4 @@ C# 8.0では以下の主要な改善がありました：
 - **Asynchronous Streams**: 非同期データストリーミング
 - **Indices and Ranges**: 配列操作の利便性向上
 
-これらの機能により、C#のコードはより安全で、簡潔で、パフォーマンスが良くなりました。特にNullable Reference TypesとPattern Matchingは、日常的な開発において大きな恩恵をもたらします。
+これらの機能により、CSharpのコードはより安全で、簡潔で、パフォーマンスが良くなりました。特にNullable Reference TypesとPattern Matchingは、日常的な開発において大きな恩恵をもたらします。

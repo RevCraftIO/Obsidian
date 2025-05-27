@@ -4,9 +4,9 @@ tags:
   - CSharp
 子文書:
 ---
-# C# 11.0 新機能まとめ
+# CSharp 11.0 新機能まとめ
 
-C# 11.0では生産性とパフォーマンスの向上に焦点を当てた多くの新機能が追加されました。
+CSharp 11.0では生産性とパフォーマンスの向上に焦点を当てた多くの新機能が追加されました。
 
 ## 1. Raw String Literals
 
@@ -392,7 +392,7 @@ public struct Point
     public int Y;
     public int Z;
     
-    // C# 11では一部のフィールドのみ初期化すればよい
+    // CSharp 11では一部のフィールドのみ初期化すればよい
     public Point(int x, int y)
     {
         X = x;
@@ -575,7 +575,7 @@ public static class MemoryCalculator
 
 ## まとめ
 
-C# 11.0では以下の主要な改善がありました：
+CSharp 11.0では以下の主要な改善がありました：
 
 - **Raw String Literals**: 複数行文字列の簡潔な記述
 - **Required Members**: 必須プロパティの指定
@@ -584,4 +584,4 @@ C# 11.0では以下の主要な改善がありました：
 - **UTF-8 String Literals**: UTF-8文字列の直接定義
 - **Static Abstract Members**: インターフェースの静的抽象メンバー
 
-これらの機能により、C#のコードはより表現力豊かで、型安全性が向上し、パフォーマンスも改善されました。特にRaw String LiteralsとList Patternsは日常的な開発で大きな恩恵をもたらします。
+これらの機能により、CSharpのコードはより表現力豊かで、型安全性が向上し、パフォーマンスも改善されました。特にRaw String LiteralsとList Patternsは日常的な開発で大きな恩恵をもたらします。

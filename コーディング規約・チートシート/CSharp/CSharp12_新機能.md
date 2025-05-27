@@ -4,10 +4,9 @@ tags:
   - CSharp
 子文書:
 ---
+# CSharp 12.0 新機能まとめ
 
-# C# 12.0 新機能まとめ
-
-C# 12.0では、コードの簡潔さと型安全性の向上に焦点を当てた新機能が追加されました。
+CSharp 12.0では、コードの簡潔さと型安全性の向上に焦点を当てた新機能が追加されました。
 
 ## 1. Primary Constructors
 
@@ -223,7 +222,7 @@ public class Validator<T> where T : notnull
 
 ## まとめ
 
-C# 12.0では以下の主要な改善がありました：
+CSharp 12.0では以下の主要な改善がありました：
 
 - **Primary Constructors**: クラスと構造体での簡潔なコンストラクタ定義
 - **Collection Expressions**: コレクション初期化の簡素化
@@ -232,4 +231,4 @@ C# 12.0では以下の主要な改善がありました：
 - **Inline Arrays**: 固定サイズ配列の簡潔な定義
 - **Pattern Matching Improvements**: パターンマッチングの機能強化
 
-これらの機能により、C#のコードはより簡潔で読みやすくなり、型安全性も向上しました。特にPrimary ConstructorsとCollection Expressionsは日常的な開発で大きな恩恵をもたらします。
+これらの機能により、CSharpのコードはより簡潔で読みやすくなり、型安全性も向上しました。特にPrimary ConstructorsとCollection Expressionsは日常的な開発で大きな恩恵をもたらします。
