@@ -7,225 +7,196 @@ tags:
 
 # C# 13.0 新機能まとめ
 
-C# 13.0では、パフォーマンスの向上とコードの表現力の強化に焦点を当てた新機能が追加されました。
+C# 13.0では、コードの簡潔さ、型安全性、パフォーマンスの向上に焦点を当てた新機能が追加されました。
 
-## 1. Params Span
+## 1. パラメータリストのパターンマッチング
 
-Span<T>をparamsパラメータとして使用できるようになりました。
-
-```csharp
-// params Spanの使用
-public static int Sum(params Span<int> numbers)
-{
-    int sum = 0;
-    foreach (var num in numbers)
-    {
-        sum += num;
-    }
-    return sum;
-}
-
-// 使用例
-int[] array = [1, 2, 3, 4, 5];
-Console.WriteLine(Sum(array));  // 15
-Console.WriteLine(Sum(1, 2, 3)); // 6
-```
-
-## 2. Method Group Conversion to Delegate
-
-メソッドグループからデリゲートへの変換が改善されました。
+メソッドのパラメータリストでパターンマッチングを使用できるようになりました。
 
 ```csharp
-// メソッドグループの変換
-public class Calculator
+// パラメータリストでのパターンマッチング
+public void ProcessData((string Name, int Age) person)
 {
-    public static int Add(int x, int y) => x + y;
-    public static int Subtract(int x, int y) => x - y;
+    // パラメータの分解
+    var (name, age) = person;
+    Console.WriteLine($"{name}さんは{age}歳です");
 }
 
-// 使用例
-Func<int, int, int> operation = Calculator.Add;
-var result = operation(5, 3); // 8
-
-// より複雑な例
-var operations = new Dictionary<string, Func<int, int, int>>
+// 複雑なパターンマッチング
+public string GetPersonInfo((string Name, int Age, string Department) person) => person switch
 {
-    ["加算"] = Calculator.Add,
-    ["減算"] = Calculator.Subtract
+    ("田中", 30, "開発部") => "田中さんは開発部の30歳です",
+    (_, var age, "営業部") when age < 30 => "若手営業マンです",
+    (var name, var age, _) => $"{name}さんは{age}歳です",
+    _ => "不明な情報です"
 };
 ```
 
-## 3. Auto Properties with Field Initializers
+## 2. 拡張メソッドの型パラメータ
 
-自動プロパティでフィールド初期化子を使用できます。
-
-```csharp
-public class Configuration
-{
-    public string Server { get; } = "localhost";
-    public int Port { get; } = 8080;
-    public bool IsSecure { get; } = true;
-    
-    // 計算された初期値
-    public string ConnectionString { get; } = $"Server={Server};Port={Port}";
-}
-
-// 使用例
-var config = new Configuration();
-Console.WriteLine(config.ConnectionString); // Server=localhost;Port=8080
-```
-
-## 4. Pattern Matching on Span<char>
-
-Span<char>に対するパターンマッチングが強化されました。
+拡張メソッドで型パラメータを使用できるようになりました。
 
 ```csharp
-// Span<char>のパターンマッチング
-bool IsValidPhoneNumber(ReadOnlySpan<char> phone) => phone switch
+// 拡張メソッドでの型パラメータ
+public static class EnumerableExtensions
 {
-    ['0', '9', '0', '-', .., '-', ..] => true,  // 090-XXXX-XXXX
-    ['0', '8', '0', '-', .., '-', ..] => true,  // 080-XXXX-XXXX
-    ['0', '7', '0', '-', .., '-', ..] => true,  // 070-XXXX-XXXX
-    _ => false
-};
-
-// 使用例
-string phone = "090-1234-5678";
-Console.WriteLine(IsValidPhoneNumber(phone)); // True
-```
-
-## 5. Extended Fixed Statement
-
-fixedステートメントの機能が拡張されました。
-
-```csharp
-// 拡張されたfixedステートメント
-unsafe
-{
-    int[] array = [1, 2, 3, 4, 5];
-    fixed (int* ptr = array)
+    public static IEnumerable<TResult> SelectMany<T, TResult>(
+        this IEnumerable<T> source,
+        Func<T, IEnumerable<TResult>> selector)
     {
-        // 配列の要素にアクセス
-        for (int i = 0; i < array.Length; i++)
+        foreach (var item in source)
         {
-            Console.WriteLine(*(ptr + i));
+            foreach (var result in selector(item))
+            {
+                yield return result;
+            }
         }
     }
 }
+
+// 使用例
+var numbers = new[] { 1, 2, 3 };
+var result = numbers.SelectMany(n => Enumerable.Range(1, n));
 ```
 
-## 6. Improved Target-typed new Expressions
+## 3. インターフェースのデフォルト実装の改善
 
-ターゲット型のnew式が改善されました。
+インターフェースのデフォルト実装がより柔軟になりました。
 
 ```csharp
-// 改善されたターゲット型のnew式
-public class Person
+public interface ILogger
 {
-    public string Name { get; }
-    public int Age { get; }
+    void Log(string message);
     
-    public Person(string name, int age)
-    {
-        Name = name;
-        Age = age;
-    }
+    // デフォルト実装を持つメソッド
+    void LogError(string message) => Log($"ERROR: {message}");
+    void LogWarning(string message) => Log($"WARNING: {message}");
+    void LogInfo(string message) => Log($"INFO: {message}");
 }
 
-// 使用例
-Person person = new("田中太郎", 30);
-List<Person> people = new() { new("鈴木一郎", 25), new("佐藤花子", 28) };
-```
-
-## 7. Enhanced Interpolated String Handling
-
-補間文字列の処理が強化されました。
-
-```csharp
-// 強化された補間文字列
-string name = "田中太郎";
-int age = 30;
-
-// 複雑な条件式を含む補間
-string message = $"""
-    ユーザー情報:
-    名前: {name}
-    年齢: {age}
-    区分: {(age >= 20 ? "成人" : "未成年")}
-    登録日: {DateTime.Now:yyyy-MM-dd}
-    """;
-
-// 式の補間
-string result = $"計算結果: {Math.Pow(2, 3)}";
-```
-
-## 8. Improved Generic Type Inference
-
-ジェネリック型の推論が改善されました。
-
-```csharp
-// 改善された型推論
-public class Repository<T>
+// 実装例
+public class ConsoleLogger : ILogger
 {
-    public T Create<TValue>(TValue value) where TValue : T
+    public void Log(string message)
     {
-        return (T)Convert.ChangeType(value, typeof(T));
+        Console.WriteLine(message);
+    }
+    
+    // デフォルト実装をオーバーライド
+    public void LogError(string message)
+    {
+        Console.WriteLine($"重大なエラー: {message}");
     }
 }
-
-// 使用例
-var repo = new Repository<int>();
-var number = repo.Create("123"); // 文字列からintへの変換
 ```
 
-## 9. Enhanced Nullable Reference Types
+## 4. レコード型の機能強化
 
-null許容参照型の機能が強化されました。
+レコード型の機能が強化され、より柔軟な使用が可能になりました。
 
 ```csharp
-#nullable enable
-
-public class User
+// レコード型の機能強化
+public record Person
 {
     public required string Name { get; init; }
+    public required int Age { get; init; }
     public string? Email { get; init; }
-    public required string PhoneNumber { get; init; }
     
-    public string GetContactInfo() => Email ?? PhoneNumber;
+    // カスタムデコンストラクタ
+    public void Deconstruct(out string name, out int age)
+    {
+        name = Name;
+        age = Age;
+    }
 }
 
 // 使用例
-var user = new User
+var person = new Person { Name = "田中太郎", Age = 30 };
+var (name, age) = person;
+```
+
+## 5. パターンマッチングの拡張
+
+パターンマッチングの機能がさらに拡張されました。
+
+```csharp
+// 拡張されたパターンマッチング
+public string GetPersonStatus(Person person) => person switch
 {
-    Name = "田中太郎",
-    PhoneNumber = "090-1234-5678"
+    { Name: "田中", Age: > 30 } => "田中さんは30歳以上です",
+    { Name: var name, Age: < 20 } => $"{name}さんは未成年です",
+    { Email: not null } => "メールアドレスが登録されています",
+    _ => "その他の情報です"
+};
+
+// リストパターンの拡張
+public string ProcessNumbers(int[] numbers) => numbers switch
+{
+    [1, 2, 3, ..] => "1,2,3で始まります",
+    [.., 7, 8, 9] => "7,8,9で終わります",
+    [1, .., 9] => "1で始まり9で終わります",
+    _ => "その他のパターンです"
 };
 ```
 
-## 10. Improved Exception Handling
+## 6. 非同期ストリームの改善
 
-例外処理の機能が強化されました。
+非同期ストリームの機能が改善され、より効率的な使用が可能になりました。
 
 ```csharp
-// 強化された例外処理
-public class DataProcessor
+// 非同期ストリームの改善
+public async IAsyncEnumerable<int> GetNumbersAsync()
 {
-    public async Task ProcessDataAsync()
+    for (int i = 0; i < 10; i++)
     {
-        try
+        await Task.Delay(100);
+        yield return i;
+    }
+}
+
+// 使用例
+await foreach (var number in GetNumbersAsync())
+{
+    Console.WriteLine(number);
+}
+```
+
+## 7. 型推論の強化
+
+型推論の機能が強化され、より正確な型推論が可能になりました。
+
+```csharp
+// 型推論の強化
+var numbers = new[] { 1, 2, 3, 4, 5 };
+var sum = numbers.Sum(); // int型として推論
+
+var mixed = new[] { 1, 2.0, 3.5 }; // double型として推論
+var average = mixed.Average(); // double型として推論
+```
+
+## 8. パフォーマンス最適化
+
+パフォーマンス最適化のための新機能が追加されました。
+
+```csharp
+// パフォーマンス最適化
+public class OptimizedList<T>
+{
+    private T[] _items;
+    private int _count;
+    
+    public OptimizedList(int capacity)
+    {
+        _items = new T[capacity];
+    }
+    
+    public void Add(T item)
+    {
+        if (_count == _items.Length)
         {
-            await LoadDataAsync();
+            Array.Resize(ref _items, _items.Length * 2);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // ファイル関連の例外を処理
-            LogError("ファイルアクセスエラー", ex);
-        }
-        catch (Exception ex) when (ex is TimeoutException)
-        {
-            // タイムアウト例外を処理
-            LogError("タイムアウト", ex);
-        }
+        _items[_count++] = item;
     }
 }
 ```
@@ -234,11 +205,13 @@ public class DataProcessor
 
 C# 13.0では以下の主要な改善がありました：
 
-- **Params Span**: パフォーマンスの向上
-- **Method Group Conversion**: デリゲートの使用が簡潔に
-- **Auto Properties with Field Initializers**: プロパティ初期化の簡素化
-- **Pattern Matching on Span<char>**: 文字列処理の効率化
-- **Extended Fixed Statement**: ポインタ操作の安全性向上
-- **Improved Target-typed new Expressions**: オブジェクト生成の簡潔化
+- **パラメータリストのパターンマッチング**: メソッドパラメータでの柔軟なパターンマッチング
+- **拡張メソッドの型パラメータ**: より柔軟な拡張メソッドの実装
+- **インターフェースのデフォルト実装の改善**: より柔軟なインターフェース設計
+- **レコード型の機能強化**: より表現力豊かなレコード型の使用
+- **パターンマッチングの拡張**: より強力なパターンマッチング機能
+- **非同期ストリームの改善**: より効率的な非同期処理
+- **型推論の強化**: より正確な型推論
+- **パフォーマンス最適化**: より効率的なコード実行
 
-これらの機能により、C#のコードはより効率的で安全になり、パフォーマンスも向上しました。特にParams SpanとPattern Matching on Span<char>は、パフォーマンスが重要な場面で大きな恩恵をもたらします。
+これらの機能により、C#のコードはより簡潔で読みやすくなり、型安全性とパフォーマンスも向上しました。特にパラメータリストのパターンマッチングとレコード型の機能強化は、日常的な開発で大きな恩恵をもたらします。 
