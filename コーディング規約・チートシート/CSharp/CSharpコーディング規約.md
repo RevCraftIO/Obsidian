@@ -1,7 +1,7 @@
 ## 参考文書
 - [CSharp_新機能](CSharp_新機能.md)
-- [[ASP.NET Core Web API]]
-- [[WPF]]
+- [ASP.NET Core Web API](ASP.NET%20Core%20Web%20API.md)
+- [WPF](WPF.md)
 
 ## 目次
 
@@ -145,7 +145,7 @@ using CompanyName.ProductName.Feature.Component;
 
 ### XMLドキュメンテーション
 
-- パブリック API（クラス、メソッド、プロパティ）にはすべて XML コメントを使用します。
+- すべてのメンバー（パブリック、プライベート、プロテクテッド）に XML コメントを使用します。
 - 少なくとも `<summary>` タグを含めます。
 - パラメータには `<param>` タグ、戻り値には `<returns>` タグ、例外には `<exception>` タグを使用します。
 
@@ -157,6 +157,16 @@ using CompanyName.ProductName.Feature.Component;
 /// <returns>顧客情報。見つからない場合は null。</returns>
 /// <exception cref="ArgumentException">IDが無効な場合にスローされます。</exception>
 public Customer GetCustomerById(int id)
+{
+    return GetCustomerByIdInternal(id);
+}
+
+/// <summary>
+/// 内部的な顧客情報取得処理を実行します。
+/// </summary>
+/// <param name="id">顧客ID</param>
+/// <returns>顧客情報。見つからない場合は null。</returns>
+private Customer GetCustomerByIdInternal(int id)
 {
     // 実装
 }
