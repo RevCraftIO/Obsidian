@@ -1,5 +1,5 @@
 ## 子文書
-- [[CSharp 10以降の新機能]]
+- [CSharp_新機能](CSharp_新機能.md)
 - [[ASP.NET Core Web API]]
 - [[WPF]]
 
