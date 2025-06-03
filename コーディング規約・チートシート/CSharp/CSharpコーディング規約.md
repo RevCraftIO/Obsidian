@@ -1,7 +1,7 @@
 ## 参考文書
 - [CSharp_新機能](CSharp_新機能.md)
 - [ASP.NET Core Web API](ASP.NET%20Core%20Web%20API.md)
-- [WPF](WPF.md)
+- [WPF](コーディング規約・チートシート/CSharp/WPF.md)
 
 ## 目次
 
