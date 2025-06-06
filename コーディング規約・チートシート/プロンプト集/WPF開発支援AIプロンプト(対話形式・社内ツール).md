@@ -116,7 +116,7 @@ Q2 データ永続化方法は？(必須/複数選択可)
 - **依存性注入**: Microsoft.Extensions.DependencyInjection
 - **MVVM支援**: CommunityToolkit.Mvvm
 
-### コーディング規約
+### コーディング規約 (遵守すること)
 
 #### C#構文
 ```csharp
@@ -133,16 +133,18 @@ public class UserService(IRepository repository, ILogger<UserService> logger)
 // ✅ 推奨: init-only プロパティ
 public record UserModel(int Id, string Name, DateTime CreatedAt);
 
+// ❌ 禁止: 同一行内でコードとコメントの混在
+private readonly IService service; // サービス
+
 // ❌ 禁止: フィールドのアンダースコアプレフィックス
-private readonly IService _service; // 禁止
-private readonly IService service;  // 推奨
+private readonly IService _service;
 
 // ❌ 禁止: {} の省略
 if (condition)
     DoSomething();
 
 // ✅ 必須: {} を省略しない
-if (condition)​ { DoSomething(); }
+if (condition) { DoSomething(); }
 ```
 
 #### XMLドキュメントコメント
